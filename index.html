@@ -56,7 +56,7 @@
 <body>
   <h1>Fun Geo Dash Game</h1>
   <div id="scoreboard">
-    Score: <span id="score">0</span> | High Score: <span id="highscore">0</span>
+    Score: <span id="score">0</span> | High: <span id="highscore">0</span>
   </div>
   <canvas id="gameCanvas" width="800" height="400"></canvas>
   <div class="mobile-controls">
@@ -100,14 +100,10 @@
   }
 
   function generatePinkBlock() {
-    let heightOptions
-    if(score < 100) {
-      heightOptions = [BLOCK_WIDTH, BLOCK_WIDTH*2]
-    } else {
-      heightOptions = [BLOCK_WIDTH, BLOCK_WIDTH*2, BLOCK_WIDTH*3]
-    }
-    const heightBlocks = heightOptions[Math.floor(Math.random() * heightOptions.length)]
-    const height = heightBlocks
+    let maxHeightBlocks = 3
+    if(score >= 100) maxHeightBlocks = 7
+    const heightBlocks = 1 + Math.floor(Math.random() * maxHeightBlocks)
+    const height = heightBlocks * BLOCK_WIDTH
     const blockX = canvas.width
 
     blocks.push({
@@ -119,16 +115,16 @@
       type: "obstacle"
     })
 
-    if (heightBlocks === BLOCK_WIDTH*3) {
+    if (heightBlocks >= 3) {
       blocks.push({
         x: blockX - BLOCK_WIDTH,
-        y: FLOOR_Y - BLOCK_WIDTH*2,
+        y: FLOOR_Y - BLOCK_WIDTH * (heightBlocks - 1),
         width: BLOCK_WIDTH,
         height: BLOCK_WIDTH,
         color: "cyan",
         type: "platform"
       })
-    } else if (heightBlocks === BLOCK_WIDTH*2) {
+    } else if (heightBlocks === 2) {
       blocks.push({
         x: blockX - BLOCK_WIDTH,
         y: FLOOR_Y - BLOCK_WIDTH,
