@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fun Geo Dash Game</title>
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background-color: black;
+      border: 5px solid cyan;
+    }
+
+    #scoreboard {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      font-family: monospace;
+      font-size: 18px;
+      z-index: 10;
+    }
+
+    .mobile-controls {
+      display: none;
+      position: absolute;
+      bottom: 20px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .mobile-controls button {
+      font-size: 24px;
+      padding: 10px 20px;
+      background: cyan;
+      border: none;
+      border-radius: 8px;
+    }
+
+    @media (max-width: 768px) {
+      .mobile-controls {
+        display: block;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="scoreboard">
+    Score: <span id="score">0</span> |
+    High Score: <span id="highscore">0</span>
+  </div>
+  <canvas id="gameCanvas" width="800" height="400"></canvas>
+  <div class="mobile-controls">
+    <button onclick="jump()">⬆️</button>
+  </div>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let score = 0;
+    let highscore = localStorage.getItem("geoHighScore") || 0;
+    document.getElementById("highscore").textContent = highscore;
+
+    const player = {
+      x: 50,
+      y: 300,
+      width: 30,
+      height: 30,
+      color: "cyan",
+      velocityY: 0,
+      jumpForce: -12,
+      gravity: 0.7,
+      onGround: false
+    };
+
+    let blocks = [];
+    let gameSpeed = 4;
+
+    function generateBlock() {
+      const height = 40 + Math.random() * 60;
+      const y = canvas.height - height;
+      blocks.push({
+        x: canvas.width,
+        y,
+        width: 30,
+        height,
+        color: "pink"
+      });
+    }
+
+    function updateBlocks() {
+      blocks.forEach(b => b.x -= gameSpeed);
+      blocks = blocks.filter(b => b.x + b.width > 0);
+
+      blocks.forEach(b => {
+        if (!b.passed && b.x + b.width < player.x) {
+          b.passed = true;
+          score++;
+          document.getElementById("score").textContent = score;
+        }
+      });
+
+      if (Math.random() < 0.02) generateBlock();
+    }
+
+    function jump() {
+      if (player.onGround) {
+        player.velocityY = player.jumpForce;
+        player.onGround = false;
+      }
+    }
+
+    function updatePlayer() {
+      player.velocityY += player.gravity;
+      player.y += player.velocityY;
+
+      if (player.y + player.height >= canvas.height) {
+        player.y = canvas.height - player.height;
+        player.velocityY = 0;
+        player.onGround = true;
+      }
+
+      for (let b of blocks) {
+        if (
+          player.x < b.x + b.width &&
+          player.x + player.width > b.x &&
+          player.y < b.y + b.height &&
+          player.y + player.height > b.y
+        ) {
+          resetGame();
+        }
+      }
+    }
+
+    function resetGame() {
+      highscore = Math.max(highscore, score);
+      localStorage.setItem("geoHighScore", highscore);
+      document.getElementById("highscore").textContent = highscore;
+      score = 0;
+      document.getElementById("score").textContent = score;
+      blocks = [];
+      player.y = 300;
+      player.velocityY = 0;
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = "cyan";
+      ctx.fillRect(0, canvas.height - 5, canvas.width, 5);
+
+      ctx.fillStyle = player.color;
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+
+      blocks.forEach(b => {
+        ctx.fillStyle = b.color;
+        ctx.fillRect(b.x, b.y, b.width, b.height);
+        ctx.strokeStyle = "purple";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(b.x, b.y, b.width, b.height);
+      });
+    }
+
+    function gameLoop() {
+      updatePlayer();
+      updateBlocks();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    document.addEventListener("keydown", e => {
+      if (["Space", "ArrowUp", "KeyW"].includes(e.code)) jump();
+    });
+
+    window.jump = jump;
+    gameLoop();
+  </script>
+</body>
+</html>
