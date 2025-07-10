@@ -1,60 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Fun Geo Dash Game</title>
-  <style>
-    body {
-      margin: 0;
-      background: black;
-      overflow: hidden;
-    }
-
-    canvas {
-      display: block;
-      margin: 0 auto;
-      background-color: black;
-      border: 5px solid cyan;
-    }
-
-    #scoreboard {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      color: white;
-      font-family: monospace;
-      font-size: 18px;
-      z-index: 10;
-    }
-
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fun Geo Dash Game</title>
+<style>
+  body { 
+    margin: 0;
+    background: black;
+    overflow: hidden;
+  }
+  canvas {
+    display: block;
+    margin: 0 auto;
+    background: black;
+    border: 5px solid cyan;
+  }
+  #scoreboard {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: white;
+    font-family: monospace;
+    font-size: 18px;
+    z-index: 10;
+  }
+  .mobile-controls {
+    display: none;
+    position: absolute;
+    bottom: 20px;
+    width: 100%;
+    text-align: center;
+  }
+  .mobile-controls button {
+    font-size: 24px;
+    padding: 10px 20px;
+    background: cyan;
+    border: none;
+    border-radius: 8px;
+  }
+  @media (max-width: 768px) {
     .mobile-controls {
-      display: none;
-      position: absolute;
-      bottom: 20px;
-      width: 100%;
-      text-align: center;
+      display: block;
     }
-
-    .mobile-controls button {
-      font-size: 24px;
-      padding: 10px 20px;
-      background: cyan;
-      border: none;
-      border-radius: 8px;
-    }
-
-    @media (max-width: 768px) {
-      .mobile-controls {
-        display: block;
-      }
-    }
-  </style>
+  }
+</style>
 </head>
+<h1>Fun Geo Dash Game</h1>
 <body>
   <div id="scoreboard">
-    Score: <span id="score">0</span> |
-    High Score: <span id="highscore">0</span>
+    Score: <span id="score">0</span> | High Score: <span id="highscore">0</span>
   </div>
   <canvas id="gameCanvas" width="800" height="400"></canvas>
   <div class="mobile-controls">
@@ -68,31 +63,98 @@
     let highscore = localStorage.getItem("geoHighScore") || 0;
     document.getElementById("highscore").textContent = highscore;
 
+    const BLOCK_WIDTH = 30;
+    const FLOOR_Y = canvas.height - 5;
+
     const player = {
       x: 50,
-      y: 300,
+      y: FLOOR_Y - 30,
       width: 30,
       height: 30,
       color: "cyan",
       velocityY: 0,
-      jumpForce: -12,
+      jumpForce: -15,  
       gravity: 0.7,
       onGround: false
     };
 
+    
     let blocks = [];
     let gameSpeed = 4;
+    let frameCount = 0;
 
-    function generateBlock() {
-      const height = 40 + Math.random() * 60;
-      const y = canvas.height - height;
-      blocks.push({
-        x: canvas.width,
-        y,
-        width: 30,
-        height,
-        color: "pink"
-      });
+    
+    function generatePattern() {
+      
+      const patternType = Math.floor(Math.random() * 3);
+
+      const startX = canvas.width;
+      if (patternType === 0) {
+        
+        let count = 1 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < count; i++) {
+          let height = 40 + Math.random() * 80;
+          blocks.push({
+            x: startX + i * (BLOCK_WIDTH + 50),
+            y: FLOOR_Y - height,
+            width: BLOCK_WIDTH,
+            height: height,
+            color: "pink",
+            type: "obstacle"
+          });
+        }
+      } else if (patternType === 1) {
+        
+        let baseY = FLOOR_Y - BLOCK_WIDTH; 
+        let baseX = startX;
+        for (let i = 0; i < 3; i++) {
+          
+          blocks.push({
+            x: baseX + i * (BLOCK_WIDTH + 30),
+            y: baseY,
+            width: BLOCK_WIDTH,
+            height: BLOCK_WIDTH,
+            color: "black",
+            type: "platform"
+          });
+          
+          blocks.push({
+            x: baseX + i * (BLOCK_WIDTH + 30),
+            y: baseY - BLOCK_WIDTH,
+            width: BLOCK_WIDTH,
+            height: BLOCK_WIDTH,
+            color: "cyan",
+            type: "platform"
+          });
+        }
+      } else {
+        
+        let baseY = FLOOR_Y - 70;
+        blocks.push({
+          x: startX,
+          y: baseY,
+          width: BLOCK_WIDTH,
+          height: 70,
+          color: "pink",
+          type: "obstacle"
+        });
+        blocks.push({
+          x: startX + BLOCK_WIDTH + 20,
+          y: baseY - BLOCK_WIDTH,
+          width: BLOCK_WIDTH,
+          height: BLOCK_WIDTH,
+          color: "cyan",
+          type: "platform"
+        });
+        blocks.push({
+          x: startX + 2*BLOCK_WIDTH + 40,
+          y: baseY - 2*BLOCK_WIDTH,
+          width: BLOCK_WIDTH,
+          height: BLOCK_WIDTH,
+          color: "black",
+          type: "platform"
+        });
+      }
     }
 
     function updateBlocks() {
@@ -107,7 +169,11 @@
         }
       });
 
-      if (Math.random() < 0.02) generateBlock();
+      
+      frameCount++;
+      if (frameCount % 120 === 0) {
+        generatePattern();
+      }
     }
 
     function jump() {
@@ -121,20 +187,45 @@
       player.velocityY += player.gravity;
       player.y += player.velocityY;
 
-      if (player.y + player.height >= canvas.height) {
-        player.y = canvas.height - player.height;
+      
+      if (player.y + player.height >= FLOOR_Y) {
+        player.y = FLOOR_Y - player.height;
         player.velocityY = 0;
         player.onGround = true;
+      } else {
+        player.onGround = false;
       }
 
+      
+      if (player.velocityY >= 0) {
+        for (let b of blocks) {
+          if (b.type === "platform") {
+            const playerBottom = player.y + player.height;
+            const blockTop = b.y;
+            const withinX = player.x + player.width > b.x && player.x < b.x + b.width;
+            const closeY = playerBottom <= blockTop + player.velocityY && playerBottom + player.velocityY >= blockTop;
+            if (withinX && closeY) {
+              
+              player.y = blockTop - player.height;
+              player.velocityY = 0;
+              player.onGround = true;
+            }
+          }
+        }
+      }
+
+      
       for (let b of blocks) {
-        if (
-          player.x < b.x + b.width &&
-          player.x + player.width > b.x &&
-          player.y < b.y + b.height &&
-          player.y + player.height > b.y
-        ) {
-          resetGame();
+        if (b.type === "obstacle") {
+          if (
+            player.x < b.x + b.width &&
+            player.x + player.width > b.x &&
+            player.y < b.y + b.height &&
+            player.y + player.height > b.y
+          ) {
+            resetGame();
+            break;
+          }
         }
       }
     }
@@ -146,23 +237,27 @@
       score = 0;
       document.getElementById("score").textContent = score;
       blocks = [];
-      player.y = 300;
+      player.y = FLOOR_Y - player.height;
       player.velocityY = 0;
+      frameCount = 0;
     }
 
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      
       ctx.fillStyle = "cyan";
-      ctx.fillRect(0, canvas.height - 5, canvas.width, 5);
+      ctx.fillRect(0, FLOOR_Y, canvas.width, 5);
 
+      
       ctx.fillStyle = player.color;
       ctx.fillRect(player.x, player.y, player.width, player.height);
 
+      
       blocks.forEach(b => {
         ctx.fillStyle = b.color;
         ctx.fillRect(b.x, b.y, b.width, b.height);
-        ctx.strokeStyle = "purple";
+        ctx.strokeStyle = b.type === "obstacle" ? "purple" : "cyan";
         ctx.lineWidth = 2;
         ctx.strokeRect(b.x, b.y, b.width, b.height);
       });
