@@ -54,9 +54,9 @@
 </style>
 </head>
 <body>
-  <h1>FunGeo Dash Game</h1>
+  <h1>Fun Geo Dash Game</h1>
   <div id="scoreboard">
-    Score: <span id="score">0</span> | High Score: <span id="highscore">0</span>
+    Score: <span id="score">0</span> | High Socre: <span id="highscore">0</span>
   </div>
   <canvas id="gameCanvas" width="800" height="400"></canvas>
   <div class="mobile-controls">
@@ -80,9 +80,14 @@
     height: 30,
     color: "cyan",
     velocityY: 0,
-    jumpForce: -15,
     gravity: 0.7,
-    onGround: false
+    onGround: false,
+    jumpTime: 0,
+    jumpDuration: 30,
+    jumpHeight: BLOCK_WIDTH * 3,
+    jumpForward: BLOCK_WIDTH * 3,
+    jumping: false,
+    startX: 50
   };
 
   let blocks = [];
@@ -162,35 +167,53 @@
   }
 
   function jump() {
-    if (player.onGround) {
-      player.velocityY = player.jumpForce;
+    if (!player.jumping && player.onGround) {
+      player.jumping = true;
+      player.jumpTime = 0;
+      player.startX = player.x;
       player.onGround = false;
+      player.velocityY = 0;
     }
   }
 
   function updatePlayer() {
-    player.velocityY += player.gravity;
-    player.y += player.velocityY;
-
-    if (player.y + player.height >= FLOOR_Y) {
-      player.y = FLOOR_Y - player.height;
-      player.velocityY = 0;
-      player.onGround = true;
+    if (player.jumping) {
+      player.jumpTime++;
+      const t = player.jumpTime / player.jumpDuration;
+      if (t > 1) {
+        player.jumping = false;
+        player.velocityY = 0;
+        player.y = FLOOR_Y - player.height;
+        player.onGround = true;
+        player.x = player.startX + player.jumpForward;
+      } else {
+        player.y = FLOOR_Y - player.height - 4 * player.jumpHeight * t * (1 - t);
+        player.x = player.startX + player.jumpForward * t;
+      }
     } else {
-      player.onGround = false;
-    }
+      player.velocityY += player.gravity;
+      player.y += player.velocityY;
 
-    if (player.velocityY >= 0) {
-      for (let b of blocks) {
-        if (b.type === "platform") {
-          const playerBottom = player.y + player.height;
-          const blockTop = b.y;
-          const withinX = player.x + player.width > b.x && player.x < b.x + b.width;
-          const closeY = playerBottom <= blockTop + player.velocityY && playerBottom + player.velocityY >= blockTop;
-          if (withinX && closeY) {
-            player.y = blockTop - player.height;
-            player.velocityY = 0;
-            player.onGround = true;
+      if (player.y + player.height >= FLOOR_Y) {
+        player.y = FLOOR_Y - player.height;
+        player.velocityY = 0;
+        player.onGround = true;
+      } else {
+        player.onGround = false;
+      }
+
+      if (player.velocityY >= 0) {
+        for (let b of blocks) {
+          if (b.type === "platform") {
+            const playerBottom = player.y + player.height;
+            const blockTop = b.y;
+            const withinX = player.x + player.width > b.x && player.x < b.x + b.width;
+            const closeY = playerBottom <= blockTop + player.velocityY && playerBottom + player.velocityY >= blockTop;
+            if (withinX && closeY) {
+              player.y = blockTop - player.height;
+              player.velocityY = 0;
+              player.onGround = true;
+            }
           }
         }
       }
@@ -220,6 +243,7 @@
     blocks = [];
     player.y = FLOOR_Y - player.height;
     player.velocityY = 0;
+    player.jumping = false;
     frameCount = 0;
     nextBlockSpawnFrame = 0;
   }
