@@ -88,6 +88,8 @@
   let blocks = [];
   let frameCount = 0;
 
+  let nextBlockSpawnFrame = 0;
+
   function getGameSpeed() {
     if(score < 100) return 2;
     if(score >= 100 && score < 200) {
@@ -118,7 +120,7 @@
 
     if (heightBlocks === BLOCK_WIDTH*3) {
       blocks.push({
-        x: blockX - BLOCK_WIDTH,
+        x: blockX - BLOCK_WIDTH * 2,
         y: FLOOR_Y - BLOCK_WIDTH*2,
         width: BLOCK_WIDTH,
         height: BLOCK_WIDTH,
@@ -127,105 +129,11 @@
       });
     } else if (heightBlocks === BLOCK_WIDTH*2) {
       blocks.push({
-        x: blockX - BLOCK_WIDTH,
+        x: blockX - BLOCK_WIDTH * 2,
         y: FLOOR_Y - BLOCK_WIDTH,
         width: BLOCK_WIDTH,
         height: BLOCK_WIDTH,
         color: "cyan",
-        type: "platform"
-      });
-    }
-  }
-
-  function generatePattern() {
-    const patternType = Math.floor(Math.random() * 3);
-    const startX = canvas.width;
-    if (patternType === 0) {
-      let count = 1 + Math.floor(Math.random() * 3);
-      for (let i = 0; i < count; i++) {
-        let heightBlocks;
-        if(score < 100) {
-          heightBlocks = 1 + Math.floor(Math.random() * 2);
-        } else {
-          heightBlocks = 1 + Math.floor(Math.random() * 3);
-        }
-        let height = heightBlocks * BLOCK_WIDTH;
-        let blockX = startX + i * (BLOCK_WIDTH + 50);
-
-        blocks.push({
-          x: blockX,
-          y: FLOOR_Y - height,
-          width: BLOCK_WIDTH,
-          height: height,
-          color: "pink",
-          type: "obstacle"
-        });
-
-        if (heightBlocks === 3) {
-          blocks.push({
-            x: blockX - BLOCK_WIDTH,
-            y: FLOOR_Y - BLOCK_WIDTH*2,
-            width: BLOCK_WIDTH,
-            height: BLOCK_WIDTH,
-            color: "cyan",
-            type: "platform"
-          });
-        } else if (heightBlocks === 2) {
-          blocks.push({
-            x: blockX - BLOCK_WIDTH,
-            y: FLOOR_Y - BLOCK_WIDTH,
-            width: BLOCK_WIDTH,
-            height: BLOCK_WIDTH,
-            color: "cyan",
-            type: "platform"
-          });
-        }
-      }
-    } else if (patternType === 1) {
-      let baseY = FLOOR_Y - BLOCK_WIDTH;
-      let baseX = startX;
-      for (let i = 0; i < 3; i++) {
-        blocks.push({
-          x: baseX + i * (BLOCK_WIDTH + 30),
-          y: baseY,
-          width: BLOCK_WIDTH,
-          height: BLOCK_WIDTH,
-          color: "black",
-          type: "platform"
-        });
-        blocks.push({
-          x: baseX + i * (BLOCK_WIDTH + 30),
-          y: baseY - BLOCK_WIDTH,
-          width: BLOCK_WIDTH,
-          height: BLOCK_WIDTH,
-          color: "cyan",
-          type: "platform"
-        });
-      }
-    } else {
-      let baseY = FLOOR_Y - 70;
-      blocks.push({
-        x: startX,
-        y: baseY,
-        width: BLOCK_WIDTH,
-        height: 70,
-        color: "pink",
-        type: "obstacle"
-      });
-      blocks.push({
-        x: startX + BLOCK_WIDTH + 20,
-        y: baseY - BLOCK_WIDTH,
-        width: BLOCK_WIDTH,
-        height: BLOCK_WIDTH,
-        color: "cyan",
-        type: "platform"
-      });
-      blocks.push({
-        x: startX + 2*BLOCK_WIDTH + 40,
-        y: baseY - 2*BLOCK_WIDTH,
-        width: BLOCK_WIDTH,
-        height: BLOCK_WIDTH,
-        color: "black",
         type: "platform"
       });
     }
@@ -247,12 +155,9 @@
 
     frameCount++;
 
-    if (frameCount % 40 === 0) {
+    if (frameCount >= nextBlockSpawnFrame) {
       generatePinkBlock();
-    }
-
-    if (frameCount % 120 === 0) {
-      generatePattern();
+      nextBlockSpawnFrame = frameCount + 80 + Math.floor(Math.random() * 11);
     }
   }
 
@@ -316,6 +221,7 @@
     player.y = FLOOR_Y - player.height;
     player.velocityY = 0;
     frameCount = 0;
+    nextBlockSpawnFrame = 0;
   }
 
   function draw() {
