@@ -86,11 +86,23 @@
   };
 
   let blocks = [];
-  let gameSpeed = 4;
   let frameCount = 0;
 
+  function getGameSpeed() {
+    if(score < 100) return 2;
+    if(score >= 100 && score < 200) {
+      return 2 + ((score - 100) / 100) * 2; 
+    }
+    return 4 + (score - 200) * 0.02;
+  }
+
   function generatePinkBlock() {
-    const heightOptions = [BLOCK_WIDTH, BLOCK_WIDTH*2, BLOCK_WIDTH*3];
+    let heightOptions;
+    if(score < 100) {
+      heightOptions = [BLOCK_WIDTH, BLOCK_WIDTH*2];
+    } else {
+      heightOptions = [BLOCK_WIDTH, BLOCK_WIDTH*2, BLOCK_WIDTH*3];
+    }
     const heightBlocks = heightOptions[Math.floor(Math.random() * heightOptions.length)];
     const height = heightBlocks;
     const blockX = canvas.width;
@@ -131,7 +143,12 @@
     if (patternType === 0) {
       let count = 1 + Math.floor(Math.random() * 3);
       for (let i = 0; i < count; i++) {
-        let heightBlocks = 1 + Math.floor(Math.random() * 3);
+        let heightBlocks;
+        if(score < 100) {
+          heightBlocks = 1 + Math.floor(Math.random() * 2);
+        } else {
+          heightBlocks = 1 + Math.floor(Math.random() * 3);
+        }
         let height = heightBlocks * BLOCK_WIDTH;
         let blockX = startX + i * (BLOCK_WIDTH + 50);
 
@@ -215,6 +232,8 @@
   }
 
   function updateBlocks() {
+    const gameSpeed = getGameSpeed();
+
     blocks.forEach(b => b.x -= gameSpeed);
     blocks = blocks.filter(b => b.x + b.width > 0);
 
