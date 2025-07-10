@@ -54,7 +54,7 @@
 </style>
 </head>
 <body>
-  <h1>Fun Geo Dash Game</h1>
+  <h1>FunGeo Dash Game</h1>
   <div id="scoreboard">
     Score: <span id="score">0</span> | High Score: <span id="highscore">0</span>
   </div>
@@ -93,7 +93,7 @@
   function getGameSpeed() {
     if(score < 100) return 2;
     if(score >= 100 && score < 200) {
-      return 2 + ((score - 100) / 100) * 2; 
+      return 2 + ((score - 100) / 100) * 2;
     }
     return 4 + (score - 200) * 0.02;
   }
@@ -120,7 +120,7 @@
 
     if (heightBlocks === BLOCK_WIDTH*3) {
       blocks.push({
-        x: blockX - BLOCK_WIDTH * 4,
+        x: blockX - BLOCK_WIDTH,
         y: FLOOR_Y - BLOCK_WIDTH*2,
         width: BLOCK_WIDTH,
         height: BLOCK_WIDTH,
@@ -129,7 +129,7 @@
       });
     } else if (heightBlocks === BLOCK_WIDTH*2) {
       blocks.push({
-        x: blockX - BLOCK_WIDTH * 4,
+        x: blockX - BLOCK_WIDTH,
         y: FLOOR_Y - BLOCK_WIDTH,
         width: BLOCK_WIDTH,
         height: BLOCK_WIDTH,
@@ -157,7 +157,7 @@
 
     if (frameCount >= nextBlockSpawnFrame) {
       generatePinkBlock();
-      nextBlockSpawnFrame = frameCount + 80 + Math.floor(Math.random() * 11);
+      nextBlockSpawnFrame = frameCount + 120 + Math.floor(Math.random() * 11);
     }
   }
 
