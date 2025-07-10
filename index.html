@@ -5,10 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Fun Geo Dash Game</title>
 <style>
-  body { 
+  body {
     margin: 0;
     background: black;
     overflow: hidden;
+    font-family: monospace, monospace;
+    color: white;
+    user-select: none;
+  }
+  h1 {
+    text-align: center;
+    margin: 10px 0;
+    color: cyan;
+    text-shadow: 0 0 8px cyan;
   }
   canvas {
     display: block;
@@ -18,10 +27,8 @@
   }
   #scoreboard {
     position: absolute;
-    top: 10px;
+    top: 50px;
     left: 10px;
-    color: white;
-    font-family: monospace;
     font-size: 18px;
     z-index: 10;
   }
@@ -46,8 +53,8 @@
   }
 </style>
 </head>
-<h1>Fun Geo Dash Game</h1>
 <body>
+  <h1>Fun Geo Dash Game</h1>
   <div id="scoreboard">
     Score: <span id="score">0</span> | High Score: <span id="highscore">0</span>
   </div>
@@ -55,227 +62,274 @@
   <div class="mobile-controls">
     <button onclick="jump()">⬆️</button>
   </div>
-  <script>
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
+<script>
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
 
-    let score = 0;
-    let highscore = localStorage.getItem("geoHighScore") || 0;
-    document.getElementById("highscore").textContent = highscore;
+  let score = 0;
+  let highscore = localStorage.getItem("geoHighScore") || 0;
+  document.getElementById("highscore").textContent = highscore;
 
-    const BLOCK_WIDTH = 30;
-    const FLOOR_Y = canvas.height - 5;
+  const BLOCK_WIDTH = 30;
+  const FLOOR_Y = canvas.height - 5;
 
-    const player = {
-      x: 50,
-      y: FLOOR_Y - 30,
-      width: 30,
-      height: 30,
-      color: "cyan",
-      velocityY: 0,
-      jumpForce: -15,  
-      gravity: 0.7,
-      onGround: false
-    };
+  const player = {
+    x: 50,
+    y: FLOOR_Y - 30,
+    width: 30,
+    height: 30,
+    color: "cyan",
+    velocityY: 0,
+    jumpForce: -15,
+    gravity: 0.7,
+    onGround: false
+  };
 
-    
-    let blocks = [];
-    let gameSpeed = 4;
-    let frameCount = 0;
+  let blocks = [];
+  let gameSpeed = 4;
+  let frameCount = 0;
 
-    
-    function generatePattern() {
-      
-      const patternType = Math.floor(Math.random() * 3);
+  function generatePinkBlock() {
+    const heightOptions = [BLOCK_WIDTH, BLOCK_WIDTH*2, BLOCK_WIDTH*3];
+    const heightBlocks = heightOptions[Math.floor(Math.random() * heightOptions.length)];
+    const height = heightBlocks;
+    const blockX = canvas.width;
 
-      const startX = canvas.width;
-      if (patternType === 0) {
-        
-        let count = 1 + Math.floor(Math.random() * 3);
-        for (let i = 0; i < count; i++) {
-          let height = 40 + Math.random() * 80;
+    blocks.push({
+      x: blockX,
+      y: FLOOR_Y - height,
+      width: BLOCK_WIDTH,
+      height: height,
+      color: "pink",
+      type: "obstacle"
+    });
+
+    if (heightBlocks === BLOCK_WIDTH*3) {
+      blocks.push({
+        x: blockX - BLOCK_WIDTH,
+        y: FLOOR_Y - BLOCK_WIDTH*2,
+        width: BLOCK_WIDTH,
+        height: BLOCK_WIDTH,
+        color: "cyan",
+        type: "platform"
+      });
+    } else if (heightBlocks === BLOCK_WIDTH*2) {
+      blocks.push({
+        x: blockX - BLOCK_WIDTH,
+        y: FLOOR_Y - BLOCK_WIDTH,
+        width: BLOCK_WIDTH,
+        height: BLOCK_WIDTH,
+        color: "cyan",
+        type: "platform"
+      });
+    }
+  }
+
+  function generatePattern() {
+    const patternType = Math.floor(Math.random() * 3);
+    const startX = canvas.width;
+    if (patternType === 0) {
+      let count = 1 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < count; i++) {
+        let heightBlocks = 1 + Math.floor(Math.random() * 3);
+        let height = heightBlocks * BLOCK_WIDTH;
+        let blockX = startX + i * (BLOCK_WIDTH + 50);
+
+        blocks.push({
+          x: blockX,
+          y: FLOOR_Y - height,
+          width: BLOCK_WIDTH,
+          height: height,
+          color: "pink",
+          type: "obstacle"
+        });
+
+        if (heightBlocks === 3) {
           blocks.push({
-            x: startX + i * (BLOCK_WIDTH + 50),
-            y: FLOOR_Y - height,
-            width: BLOCK_WIDTH,
-            height: height,
-            color: "pink",
-            type: "obstacle"
-          });
-        }
-      } else if (patternType === 1) {
-        
-        let baseY = FLOOR_Y - BLOCK_WIDTH; 
-        let baseX = startX;
-        for (let i = 0; i < 3; i++) {
-          
-          blocks.push({
-            x: baseX + i * (BLOCK_WIDTH + 30),
-            y: baseY,
+            x: blockX - BLOCK_WIDTH,
+            y: FLOOR_Y - BLOCK_WIDTH*2,
             width: BLOCK_WIDTH,
             height: BLOCK_WIDTH,
-            color: "black",
+            color: "cyan",
             type: "platform"
           });
-          
+        } else if (heightBlocks === 2) {
           blocks.push({
-            x: baseX + i * (BLOCK_WIDTH + 30),
-            y: baseY - BLOCK_WIDTH,
+            x: blockX - BLOCK_WIDTH,
+            y: FLOOR_Y - BLOCK_WIDTH,
             width: BLOCK_WIDTH,
             height: BLOCK_WIDTH,
             color: "cyan",
             type: "platform"
           });
         }
-      } else {
-        
-        let baseY = FLOOR_Y - 70;
+      }
+    } else if (patternType === 1) {
+      let baseY = FLOOR_Y - BLOCK_WIDTH;
+      let baseX = startX;
+      for (let i = 0; i < 3; i++) {
         blocks.push({
-          x: startX,
+          x: baseX + i * (BLOCK_WIDTH + 30),
           y: baseY,
           width: BLOCK_WIDTH,
-          height: 70,
-          color: "pink",
-          type: "obstacle"
+          height: BLOCK_WIDTH,
+          color: "black",
+          type: "platform"
         });
         blocks.push({
-          x: startX + BLOCK_WIDTH + 20,
+          x: baseX + i * (BLOCK_WIDTH + 30),
           y: baseY - BLOCK_WIDTH,
           width: BLOCK_WIDTH,
           height: BLOCK_WIDTH,
           color: "cyan",
           type: "platform"
         });
-        blocks.push({
-          x: startX + 2*BLOCK_WIDTH + 40,
-          y: baseY - 2*BLOCK_WIDTH,
-          width: BLOCK_WIDTH,
-          height: BLOCK_WIDTH,
-          color: "black",
-          type: "platform"
-        });
       }
-    }
-
-    function updateBlocks() {
-      blocks.forEach(b => b.x -= gameSpeed);
-      blocks = blocks.filter(b => b.x + b.width > 0);
-
-      blocks.forEach(b => {
-        if (!b.passed && b.x + b.width < player.x) {
-          b.passed = true;
-          score++;
-          document.getElementById("score").textContent = score;
-        }
+    } else {
+      let baseY = FLOOR_Y - 70;
+      blocks.push({
+        x: startX,
+        y: baseY,
+        width: BLOCK_WIDTH,
+        height: 70,
+        color: "pink",
+        type: "obstacle"
       });
-
-      
-      frameCount++;
-      if (frameCount % 120 === 0) {
-        generatePattern();
-      }
-    }
-
-    function jump() {
-      if (player.onGround) {
-        player.velocityY = player.jumpForce;
-        player.onGround = false;
-      }
-    }
-
-    function updatePlayer() {
-      player.velocityY += player.gravity;
-      player.y += player.velocityY;
-
-      
-      if (player.y + player.height >= FLOOR_Y) {
-        player.y = FLOOR_Y - player.height;
-        player.velocityY = 0;
-        player.onGround = true;
-      } else {
-        player.onGround = false;
-      }
-
-      
-      if (player.velocityY >= 0) {
-        for (let b of blocks) {
-          if (b.type === "platform") {
-            const playerBottom = player.y + player.height;
-            const blockTop = b.y;
-            const withinX = player.x + player.width > b.x && player.x < b.x + b.width;
-            const closeY = playerBottom <= blockTop + player.velocityY && playerBottom + player.velocityY >= blockTop;
-            if (withinX && closeY) {
-              
-              player.y = blockTop - player.height;
-              player.velocityY = 0;
-              player.onGround = true;
-            }
-          }
-        }
-      }
-
-      
-      for (let b of blocks) {
-        if (b.type === "obstacle") {
-          if (
-            player.x < b.x + b.width &&
-            player.x + player.width > b.x &&
-            player.y < b.y + b.height &&
-            player.y + player.height > b.y
-          ) {
-            resetGame();
-            break;
-          }
-        }
-      }
-    }
-
-    function resetGame() {
-      highscore = Math.max(highscore, score);
-      localStorage.setItem("geoHighScore", highscore);
-      document.getElementById("highscore").textContent = highscore;
-      score = 0;
-      document.getElementById("score").textContent = score;
-      blocks = [];
-      player.y = FLOOR_Y - player.height;
-      player.velocityY = 0;
-      frameCount = 0;
-    }
-
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      
-      ctx.fillStyle = "cyan";
-      ctx.fillRect(0, FLOOR_Y, canvas.width, 5);
-
-      
-      ctx.fillStyle = player.color;
-      ctx.fillRect(player.x, player.y, player.width, player.height);
-
-      
-      blocks.forEach(b => {
-        ctx.fillStyle = b.color;
-        ctx.fillRect(b.x, b.y, b.width, b.height);
-        ctx.strokeStyle = b.type === "obstacle" ? "purple" : "cyan";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(b.x, b.y, b.width, b.height);
+      blocks.push({
+        x: startX + BLOCK_WIDTH + 20,
+        y: baseY - BLOCK_WIDTH,
+        width: BLOCK_WIDTH,
+        height: BLOCK_WIDTH,
+        color: "cyan",
+        type: "platform"
+      });
+      blocks.push({
+        x: startX + 2*BLOCK_WIDTH + 40,
+        y: baseY - 2*BLOCK_WIDTH,
+        width: BLOCK_WIDTH,
+        height: BLOCK_WIDTH,
+        color: "black",
+        type: "platform"
       });
     }
+  }
 
-    function gameLoop() {
-      updatePlayer();
-      updateBlocks();
-      draw();
-      requestAnimationFrame(gameLoop);
-    }
+  function updateBlocks() {
+    blocks.forEach(b => b.x -= gameSpeed);
+    blocks = blocks.filter(b => b.x + b.width > 0);
 
-    document.addEventListener("keydown", e => {
-      if (["Space", "ArrowUp", "KeyW"].includes(e.code)) jump();
+    blocks.forEach(b => {
+      if (!b.passed && b.x + b.width < player.x) {
+        b.passed = true;
+        score++;
+        document.getElementById("score").textContent = score;
+      }
     });
 
-    window.jump = jump;
-    gameLoop();
-  </script>
+    frameCount++;
+
+    if (frameCount % 40 === 0) {
+      generatePinkBlock();
+    }
+
+    if (frameCount % 120 === 0) {
+      generatePattern();
+    }
+  }
+
+  function jump() {
+    if (player.onGround) {
+      player.velocityY = player.jumpForce;
+      player.onGround = false;
+    }
+  }
+
+  function updatePlayer() {
+    player.velocityY += player.gravity;
+    player.y += player.velocityY;
+
+    if (player.y + player.height >= FLOOR_Y) {
+      player.y = FLOOR_Y - player.height;
+      player.velocityY = 0;
+      player.onGround = true;
+    } else {
+      player.onGround = false;
+    }
+
+    if (player.velocityY >= 0) {
+      for (let b of blocks) {
+        if (b.type === "platform") {
+          const playerBottom = player.y + player.height;
+          const blockTop = b.y;
+          const withinX = player.x + player.width > b.x && player.x < b.x + b.width;
+          const closeY = playerBottom <= blockTop + player.velocityY && playerBottom + player.velocityY >= blockTop;
+          if (withinX && closeY) {
+            player.y = blockTop - player.height;
+            player.velocityY = 0;
+            player.onGround = true;
+          }
+        }
+      }
+    }
+
+    for (let b of blocks) {
+      if (b.type === "obstacle") {
+        if (
+          player.x < b.x + b.width &&
+          player.x + player.width > b.x &&
+          player.y < b.y + b.height &&
+          player.y + player.height > b.y
+        ) {
+          resetGame();
+          break;
+        }
+      }
+    }
+  }
+
+  function resetGame() {
+    highscore = Math.max(highscore, score);
+    localStorage.setItem("geoHighScore", highscore);
+    document.getElementById("highscore").textContent = highscore;
+    score = 0;
+    document.getElementById("score").textContent = score;
+    blocks = [];
+    player.y = FLOOR_Y - player.height;
+    player.velocityY = 0;
+    frameCount = 0;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = "cyan";
+    ctx.fillRect(0, FLOOR_Y, canvas.width, 5);
+
+    ctx.fillStyle = player.color;
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+
+    blocks.forEach(b => {
+      ctx.fillStyle = b.color;
+      ctx.fillRect(b.x, b.y, b.width, b.height);
+      ctx.strokeStyle = b.type === "obstacle" ? "purple" : "cyan";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(b.x, b.y, b.width, b.height);
+    });
+  }
+
+  function gameLoop() {
+    updatePlayer();
+    updateBlocks();
+    draw();
+    requestAnimationFrame(gameLoop);
+  }
+
+  document.addEventListener("keydown", e => {
+    if (["Space", "ArrowUp", "KeyW"].includes(e.code)) jump();
+  });
+
+  window.jump = jump;
+  gameLoop();
+</script>
 </body>
 </html>
