@@ -82,18 +82,13 @@
     velocityY: 0,
     gravity: 0.7,
     onGround: false,
-    jumpTime: 0,
-    jumpDuration: 30,
-    jumpForward: BLOCK_WIDTH * 3,
-    jumping: false,
-    startX: 50,
     jumpCount: 0,
-    maxJumps: 5
+    maxJumps: 5,
+    jumpStrengthBase: 18,
   }
 
   let blocks = []
   let frameCount = 0
-
   let nextBlockSpawnFrame = 0
 
   function getGameSpeed() {
@@ -169,56 +164,34 @@
 
   function jump() {
     if (player.jumpCount < player.maxJumps) {
-      player.jumping = true
-      player.jumpTime = 0
-      player.startX = player.x
+      player.velocityY = -player.jumpStrengthBase - (player.jumpCount * 6)
       player.onGround = false
-      player.velocityY = 0
       player.jumpCount++
     }
   }
 
   function updatePlayer() {
-    if (player.jumping) {
-      player.jumpTime++
-      const t = player.jumpTime / player.jumpDuration
-      if (t > 1) {
-        player.jumping = false
-        player.velocityY = 0
-        player.y = FLOOR_Y - player.height
-        player.onGround = true
-        player.x = player.startX + player.jumpForward
-      } else {
-        const currentJumpHeight = BLOCK_WIDTH * (3 + (player.jumpCount - 1))
-        player.y = FLOOR_Y - player.height - 4 * currentJumpHeight * t * (1 - t)
-        player.x = player.startX + player.jumpForward * t
-      }
+    player.velocityY += player.gravity
+    player.y += player.velocityY
+
+    if (player.y + player.height >= FLOOR_Y) {
+      player.y = FLOOR_Y - player.height
+      player.velocityY = 0
+      player.onGround = true
+      player.jumpCount = 0
     } else {
-      player.velocityY += player.gravity
-      player.y += player.velocityY
-
-      if (player.y + player.height >= FLOOR_Y) {
-        player.y = FLOOR_Y - player.height
-        player.velocityY = 0
-        player.onGround = true
-        player.jumpCount = 0
-      } else {
-        player.onGround = false
-      }
-
-      if (player.velocityY >= 0) {
-        for (let b of blocks) {
-          if (b.type === "platform") {
-            const playerBottom = player.y + player.height
-            const blockTop = b.y
-            const withinX = player.x + player.width > b.x && player.x < b.x + b.width
-            const closeY = playerBottom <= blockTop + player.velocityY && playerBottom + player.velocityY >= blockTop
-            if (withinX && closeY) {
-              player.y = blockTop - player.height
-              player.velocityY = 0
-              player.onGround = true
-              player.jumpCount = 0
-            }
+      player.onGround = false
+      for (let b of blocks) {
+        if (b.type === "platform") {
+          const playerBottom = player.y + player.height
+          const blockTop = b.y
+          const withinX = player.x + player.width > b.x && player.x < b.x + b.width
+          const closeY = playerBottom <= blockTop + player.velocityY && playerBottom + player.velocityY >= blockTop
+          if (withinX && closeY) {
+            player.y = blockTop - player.height
+            player.velocityY = 0
+            player.onGround = true
+            player.jumpCount = 0
           }
         }
       }
@@ -248,7 +221,6 @@
     blocks = []
     player.y = FLOOR_Y - player.height
     player.velocityY = 0
-    player.jumping = false
     player.jumpCount = 0
     frameCount = 0
     nextBlockSpawnFrame = 0
